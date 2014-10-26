@@ -2,35 +2,68 @@ package com.rnfdigital.beaconfinder;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.os.RemoteException;
+import android.util.Log;
+
+import com.estimote.sdk.Beacon;
+import com.estimote.sdk.BeaconManager;
+import com.estimote.sdk.Region;
+
+import java.util.List;
 
 
 public class BeaconFinderActivity extends Activity {
+
+    private static final String LOG_TAG = "BeaconFinderActivity";
+    private static final String UUID = "d2d27af6-fca8-4086-ac0d-3b90e4f2d372";
+    private static final Region BEACON_REGION = new Region("regionId", UUID, null, null);
+    private BeaconManager beaconManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beacon_finder);
-    }
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.beacon_finder, menu);
-        return true;
+        prepareForRangingBeacons();
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
+    protected void onStart() {
+        super.onStart();
+        startRangingForBeacons();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopRangingForBeacons();
+    }
+
+    private void prepareForRangingBeacons() {
+        beaconManager = new BeaconManager(this);
+        beaconManager.setRangingListener(new BeaconManager.RangingListener() {
+            @Override public void onBeaconsDiscovered(Region region, List<Beacon> beacons) {
+                Log.d(LOG_TAG, "Ranged beacons: " + beacons);
+            }
+        });
+    }
+
+    private void startRangingForBeacons() {
+        beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
+            @Override public void onServiceReady() {
+                try {
+                    beaconManager.startRanging(BEACON_REGION);
+                } catch (RemoteException e) {
+                    Log.e(LOG_TAG, "Cannot start ranging", e);
+                }
+            }
+        });
+    }
+
+    private void stopRangingForBeacons() {
+        try {
+            beaconManager.stopRanging(BEACON_REGION);
+        } catch (RemoteException e) {
+            Log.e(LOG_TAG, "Cannot stop but it does not matter now", e);
         }
-        return super.onOptionsItemSelected(item);
     }
 }
