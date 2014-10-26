@@ -24,8 +24,8 @@ public class BeaconFinderActivity extends Activity {
 
     private TextView beaconRangeTextView;
     private BeaconManager beaconManager;
-    private Utils.Proximity lastKnownProximity;
-    private long timeOfLastProximityUpdate;
+    private Utils.Proximity lastKnownProximity = Utils.Proximity.UNKNOWN;
+    private long timeOfLastProximityUpdate = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,14 +47,21 @@ public class BeaconFinderActivity extends Activity {
         stopRangingForBeacons();
     }
 
-    private void handleBeaconProximity(Utils.Proximity proximity) {
-        if (proximity != lastKnownProximity) {
-
-        }
-
-        beaconRangeTextView.setText(proximity.toString());
+    private boolean hasMinimumTimeSinceLastUpdateElapsed() {
+        return System.currentTimeMillis() - timeOfLastProximityUpdate >= MIN_TIME_BETWEEN_PROXIMITY_CHANGES_IN_MS;
     }
 
+    private void handleBeaconProximity(Utils.Proximity proximity) {
+        if (proximity != lastKnownProximity) {
+            if (hasMinimumTimeSinceLastUpdateElapsed()) {
+                beaconRangeTextView.setText(proximity.toString());
+                lastKnownProximity = proximity;
+                Log.d(LOG_TAG, "Updating beacon proximity: " + proximity);
+            }
+        }
+
+        timeOfLastProximityUpdate = System.currentTimeMillis();
+    }
     private void prepareForRangingBeacons() {
         beaconManager = new BeaconManager(this);
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
