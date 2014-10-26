@@ -38,8 +38,14 @@ public class BeaconFinderActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beacon_finder);
         beaconRangeTextView = (TextView) findViewById(R.id.beacon_range_text);
-        toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 50);
+        toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
         prepareForRangingBeacons();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        performCleanup();
     }
 
     @Override
@@ -85,7 +91,6 @@ public class BeaconFinderActivity extends Activity {
     }
 
     private void startBeepingWithInterval(long interval) {
-        cancelBeeping();
         beepTimer = new Timer();
         beepTimer.schedule(new TimerTask() {
             @Override
@@ -96,9 +101,9 @@ public class BeaconFinderActivity extends Activity {
     }
 
     private void handleBeaconProximityDidChange(Utils.Proximity proximity) {
-        if (proximity == Utils.Proximity.UNKNOWN) {
-            cancelBeeping();
-        } else {
+        cancelBeeping();
+
+        if (proximity != Utils.Proximity.UNKNOWN) {
             final long beepInterval = calculateBeepIntervalForProximity(proximity);
             startBeepingWithInterval(beepInterval);
         }
@@ -147,5 +152,10 @@ public class BeaconFinderActivity extends Activity {
         } catch (RemoteException e) {
             Log.e(LOG_TAG, "Cannot stop but it does not matter now", e);
         }
+    }
+
+    private void performCleanup() {
+        cancelBeeping();
+        beaconManager.disconnect();
     }
 }
