@@ -43,14 +43,20 @@ public class BeaconFinderActivity extends Activity {
         stopRangingForBeacons();
     }
 
+    private void updateRangeLabel(Utils.Proximity proximity) {
+        beaconRangeTextView.setText(proximity.toString());
+    }
+
     private void prepareForRangingBeacons() {
         beaconManager = new BeaconManager(this);
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
-            @Override public void onBeaconsDiscovered(Region region, List<Beacon> beacons) {
+            @Override
+            public void onBeaconsDiscovered(Region region, List<Beacon> beacons) {
                 if (beacons.size() > 0) {
                     Beacon beacon = beacons.get(0);
-                    Utils.Proximity proximity = Utils.computeProximity(beacon);
-                    Log.d(LOG_TAG, "Beacon proximity: " + proximity);
+                    updateRangeLabel(Utils.computeProximity(beacon));
+                } else {
+                    updateRangeLabel(Utils.Proximity.UNKNOWN);
                 }
             }
         });
@@ -58,7 +64,8 @@ public class BeaconFinderActivity extends Activity {
 
     private void startRangingForBeacons() {
         beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
-            @Override public void onServiceReady() {
+            @Override
+            public void onServiceReady() {
                 try {
                     beaconManager.startRanging(BEACON_REGION);
                 } catch (RemoteException e) {
