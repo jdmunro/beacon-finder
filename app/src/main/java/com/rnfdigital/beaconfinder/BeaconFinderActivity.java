@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
@@ -18,12 +19,15 @@ public class BeaconFinderActivity extends Activity {
     private static final String LOG_TAG = "BeaconFinderActivity";
     private static final String UUID = "d2d27af6-fca8-4086-ac0d-3b90e4f2d372";
     private static final Region BEACON_REGION = new Region("regionId", UUID, 16629, 25543);
+
+    private TextView beaconRangeTextView;
     private BeaconManager beaconManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beacon_finder);
+        beaconRangeTextView = (TextView) findViewById(R.id.beacon_range_text);
         prepareForRangingBeacons();
     }
 
