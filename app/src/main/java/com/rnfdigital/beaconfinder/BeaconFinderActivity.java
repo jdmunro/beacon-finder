@@ -6,6 +6,7 @@ import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.estimote.sdk.Beacon;
@@ -27,6 +28,7 @@ public class BeaconFinderActivity extends Activity {
     private static final long MIN_TIME_BETWEEN_PROXIMITY_CHANGES_IN_MS = 1500;
 
     private TextView beaconRangeTextView;
+    private Switch beepingSwitch;
     private BeaconManager beaconManager;
     private Utils.Proximity lastKnownProximity = Utils.Proximity.UNKNOWN;
     private long timeOfLastProximityUpdate = 0;
@@ -38,6 +40,7 @@ public class BeaconFinderActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beacon_finder);
         beaconRangeTextView = (TextView) findViewById(R.id.beacon_range_text);
+        beepingSwitch = (Switch) findViewById(R.id.beeping_switch);
         toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 75);
         prepareForRangingBeacons();
     }
@@ -109,7 +112,9 @@ public class BeaconFinderActivity extends Activity {
         beepTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                toneGenerator.startTone(tone, 100);
+                if (beepingSwitch.isChecked()) {
+                    toneGenerator.startTone(tone, 100);
+                }
             }
         }, 0, interval);
     }
