@@ -19,9 +19,13 @@ public class BeaconFinderActivity extends Activity {
     private static final String LOG_TAG = "BeaconFinderActivity";
     private static final String UUID = "d2d27af6-fca8-4086-ac0d-3b90e4f2d372";
     private static final Region BEACON_REGION = new Region("regionId", UUID, 16629, 25543);
+    private static final long DEFAULT_SCAN_PERIOD_IN_MS = 150;
+    private static final long MIN_TIME_BETWEEN_PROXIMITY_CHANGES_IN_MS = 250;
 
     private TextView beaconRangeTextView;
     private BeaconManager beaconManager;
+    private Utils.Proximity lastKnownProximity;
+    private long timeOfLastProximityUpdate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +47,11 @@ public class BeaconFinderActivity extends Activity {
         stopRangingForBeacons();
     }
 
-    private void updateRangeLabel(Utils.Proximity proximity) {
+    private void handleBeaconProximity(Utils.Proximity proximity) {
+        if (proximity != lastKnownProximity) {
+
+        }
+
         beaconRangeTextView.setText(proximity.toString());
     }
 
@@ -54,9 +62,9 @@ public class BeaconFinderActivity extends Activity {
             public void onBeaconsDiscovered(Region region, List<Beacon> beacons) {
                 if (beacons.size() > 0) {
                     Beacon beacon = beacons.get(0);
-                    updateRangeLabel(Utils.computeProximity(beacon));
+                    handleBeaconProximity(Utils.computeProximity(beacon));
                 } else {
-                    updateRangeLabel(Utils.Proximity.UNKNOWN);
+                    handleBeaconProximity(Utils.Proximity.UNKNOWN);
                 }
             }
         });
@@ -67,6 +75,7 @@ public class BeaconFinderActivity extends Activity {
             @Override
             public void onServiceReady() {
                 try {
+                    beaconManager.setForegroundScanPeriod(DEFAULT_SCAN_PERIOD_IN_MS, 0);
                     beaconManager.startRanging(BEACON_REGION);
                 } catch (RemoteException e) {
                     Log.e(LOG_TAG, "Cannot start ranging", e);
