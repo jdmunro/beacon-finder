@@ -24,7 +24,7 @@ public class BeaconFinderActivity extends Activity {
     private static final String UUID = "d2d27af6-fca8-4086-ac0d-3b90e4f2d372";
     private static final Region BEACON_REGION = new Region("regionId", UUID, 16629, 25543);
     private static final long DEFAULT_SCAN_PERIOD_IN_MS = 500;
-    private static final long MIN_TIME_BETWEEN_PROXIMITY_CHANGES_IN_MS = 500;
+    private static final long MIN_TIME_BETWEEN_PROXIMITY_CHANGES_IN_MS = 1500;
 
     private TextView beaconRangeTextView;
     private BeaconManager beaconManager;
@@ -38,7 +38,7 @@ public class BeaconFinderActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beacon_finder);
         beaconRangeTextView = (TextView) findViewById(R.id.beacon_range_text);
-        toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+        toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 75);
         prepareForRangingBeacons();
     }
 
@@ -61,20 +61,21 @@ public class BeaconFinderActivity extends Activity {
     }
 
     private boolean hasMinimumTimeSinceLastUpdateElapsed() {
-        return System.currentTimeMillis() - timeOfLastProximityUpdate >= MIN_TIME_BETWEEN_PROXIMITY_CHANGES_IN_MS;
+        final long timeSinceLastUpdate = System.currentTimeMillis() - timeOfLastProximityUpdate;
+        Log.d(LOG_TAG, "Time since last update: " + timeSinceLastUpdate);
+        return timeSinceLastUpdate >= MIN_TIME_BETWEEN_PROXIMITY_CHANGES_IN_MS;
     }
 
     private void handleBeaconProximity(Utils.Proximity proximity) {
         if (proximity != lastKnownProximity) {
             if (hasMinimumTimeSinceLastUpdateElapsed()) {
-                beaconRangeTextView.setText(proximity.toString());
                 lastKnownProximity = proximity;
+                timeOfLastProximityUpdate = System.currentTimeMillis();
+                beaconRangeTextView.setText(proximity.toString());
                 handleBeaconProximityDidChange(proximity);
                 Log.d(LOG_TAG, "Updating beacon proximity: " + proximity);
             }
         }
-
-        timeOfLastProximityUpdate = System.currentTimeMillis();
     }
 
     private long calculateBeepIntervalForProximity(Utils.Proximity proximity) {
@@ -90,12 +91,25 @@ public class BeaconFinderActivity extends Activity {
         }
     }
 
-    private void startBeepingWithInterval(long interval) {
+    private int toneForProximity(Utils.Proximity proximity) {
+        switch (proximity) {
+            case IMMEDIATE:
+                return ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD;
+            case NEAR:
+                return ToneGenerator.TONE_CDMA_ALERT_AUTOREDIAL_LITE;
+            case FAR:
+                return ToneGenerator.TONE_CDMA_ABBR_ALERT;
+            default:
+                return 0;
+        }
+    }
+
+    private void startBeepingWithInterval(final int tone, long interval) {
         beepTimer = new Timer();
         beepTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                toneGenerator.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100);
+                toneGenerator.startTone(tone, 100);
             }
         }, 0, interval);
     }
@@ -105,7 +119,8 @@ public class BeaconFinderActivity extends Activity {
 
         if (proximity != Utils.Proximity.UNKNOWN) {
             final long beepInterval = calculateBeepIntervalForProximity(proximity);
-            startBeepingWithInterval(beepInterval);
+            final int tone = toneForProximity(proximity);
+            startBeepingWithInterval(tone, beepInterval);
         }
     }
 
