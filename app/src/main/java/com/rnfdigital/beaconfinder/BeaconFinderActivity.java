@@ -8,6 +8,7 @@ import android.util.Log;
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
+import com.estimote.sdk.Utils;
 
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class BeaconFinderActivity extends Activity {
 
     private static final String LOG_TAG = "BeaconFinderActivity";
     private static final String UUID = "d2d27af6-fca8-4086-ac0d-3b90e4f2d372";
-    private static final Region BEACON_REGION = new Region("regionId", UUID, null, null);
+    private static final Region BEACON_REGION = new Region("regionId", UUID, 16629, 25543);
     private BeaconManager beaconManager;
 
     @Override
@@ -42,7 +43,11 @@ public class BeaconFinderActivity extends Activity {
         beaconManager = new BeaconManager(this);
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
             @Override public void onBeaconsDiscovered(Region region, List<Beacon> beacons) {
-                Log.d(LOG_TAG, "Ranged beacons: " + beacons);
+                if (beacons.size() > 0) {
+                    Beacon beacon = beacons.get(0);
+                    Utils.Proximity proximity = Utils.computeProximity(beacon);
+                    Log.d(LOG_TAG, "Beacon proximity: " + proximity);
+                }
             }
         });
     }
